@@ -1,0 +1,6 @@
+obj/
+bin/
+paket.*.bzl
+*.sln
+*.csproj
+/.vscode

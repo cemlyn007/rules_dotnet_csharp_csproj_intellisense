@@ -1,0 +1,4 @@
+# Required otherwise the VS Code C# extensions will
+#  detect "duplicate" files incorrectly.
+build --symlink_prefix=/
+run --symlink_prefix=/
