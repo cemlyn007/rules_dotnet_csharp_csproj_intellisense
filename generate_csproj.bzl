@@ -15,8 +15,8 @@ def generate_csproj(
     # Create py_binary that directly runs compile_csproj.py
     native.py_binary(
         name = name,
-        main = "@dotnet_csharp_csproj_intellisense//:compile_csproj.py",
-        srcs = ["@dotnet_csharp_csproj_intellisense//:compile_csproj.py"],
+        main = "@rules_dotnet_csharp_csproj_intellisense//:compile_csproj.py",
+        srcs = ["@rules_dotnet_csharp_csproj_intellisense//:compile_csproj.py"],
         args = [project_name, project_dir, target_framework],
         imports = [""],
         visibility = ["//visibility:public"],

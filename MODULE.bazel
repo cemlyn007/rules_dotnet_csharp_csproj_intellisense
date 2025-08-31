@@ -3,6 +3,6 @@
 """
 
 module(
-    name = "dotnet_csharp_csproj_intellisense",
+    name = "rules_dotnet_csharp_csproj_intellisense",
     version = "0.1.0",
 )

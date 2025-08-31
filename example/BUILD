@@ -1,5 +1,5 @@
-load("@dotnet_csharp_csproj_intellisense//:generate_csproj.bzl", "generate_csproj")
 load("@rules_dotnet//dotnet:defs.bzl", "csharp_binary", "csharp_library")
+load("@rules_dotnet_csharp_csproj_intellisense//:generate_csproj.bzl", "generate_csproj")
 
 # Examples package that includes all example projects
 csharp_library(
