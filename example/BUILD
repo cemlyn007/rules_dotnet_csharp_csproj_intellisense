@@ -1,3 +1,4 @@
+load("@dotnet_csharp_csproj_intellisense//:generate_csproj.bzl", "generate_csproj")
 load("@rules_dotnet//dotnet:defs.bzl", "csharp_binary", "csharp_library")
 
 # Examples package that includes all example projects
@@ -24,4 +25,10 @@ csharp_binary(
     deps = [
         ":library_a",
     ],
+)
+
+generate_csproj(
+    name = "intellisense",
+    project_name = "Project",
+    target_framework = "net6.0",
 )

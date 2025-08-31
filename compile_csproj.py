@@ -1,6 +1,7 @@
 import argparse
 import dataclasses
 import json
+import os
 import subprocess
 import xml.etree.ElementTree as ET
 from collections.abc import Iterable
@@ -245,7 +246,11 @@ def _filter_on_external_dlls(external: Path, paths: Iterable[Path]) -> list[Path
     return dlls
 
 
-def compile_csproj(project_name: str, directory: Path, target_framework: str):
+def compile_csproj(project_name: str, directory: Path, target_framework: str) -> None:
+    workspace_absolute = Path(os.environ["BUILD_WORKSPACE_DIRECTORY"])
+
+    directory = workspace_absolute / directory
+
     actions = _get_actions(directory)
 
     output_base = _run_bazel_output_base(directory)
