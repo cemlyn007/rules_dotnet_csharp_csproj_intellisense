@@ -1,7 +1,7 @@
 using System;
 using Grpc.Net.Client;
 
-namespace LibraryA
+namespace Project.LibraryA
 {
     public class HelloWorld
     {

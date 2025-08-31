@@ -1,4 +1,4 @@
-using LibraryA;
+using Project.LibraryA;
 using System;
 
 namespace Example
@@ -7,7 +7,7 @@ namespace Example
     {
         static void Main(string[] args)
         {
-            LibraryA.HelloWorld helloWorld = new();
+            Project.LibraryA.HelloWorld helloWorld = new();
             Console.WriteLine(helloWorld.GetMessage());
         }
     }

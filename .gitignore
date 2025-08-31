@@ -4,3 +4,4 @@ paket.*.bzl
 *.sln
 *.csproj
 /.vscode
+paket-files
