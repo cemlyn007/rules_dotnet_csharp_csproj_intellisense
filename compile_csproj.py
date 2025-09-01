@@ -66,6 +66,18 @@ def _run_bazel_output_base(directory: Path):
     return Path(output_base)
 
 
+def _run_bazel_output_path(directory: Path):
+    process_result = subprocess.run(
+        [BAZEL_BINARY, "info", "output_path"],
+        check=True,
+        capture_output=True,
+        cwd=directory,
+        text=True,
+    )
+    output_path = process_result.stdout.strip()
+    return Path(output_path)
+
+
 @dataclasses.dataclass
 class _Action:
     target_id: int
@@ -229,10 +241,10 @@ def _generate_csproj(
     csproj_path.write_text(xmlstr)
 
 
-def _filter_on_external_dlls(external: Path, paths: Iterable[Path]) -> list[Path]:
+def _filter_on_location_dlls(external: Path, paths: Iterable[Path]) -> list[Path]:
     dlls = []
     for path in paths:
-        if not str(path).startswith("external"):
+        if not str(path).startswith(external.name):
             continue
         if (full_path := _find_external_path(external, path)) is not None:
             if (
@@ -255,12 +267,18 @@ def compile_csproj(project_name: str, directory: Path, target_framework: str) ->
 
     output_base = _run_bazel_output_base(directory)
 
+    bazel_output_path = _run_bazel_output_path(directory)
+
     external = output_base / "external"
 
-    dlls = _filter_on_external_dlls(
+    paths = [path for action in actions for path in action.inputs + action.outputs]
+    dlls = _filter_on_location_dlls(
         external,
-        [path for action in actions for path in action.inputs + action.outputs],
+        paths,
     )
+    for dll in _filter_on_location_dlls(bazel_output_path, paths):
+        if dll not in dlls:
+            dlls.append(dll)
 
     _generate_csproj(
         csproj_path=directory / f"{project_name}.csproj",
