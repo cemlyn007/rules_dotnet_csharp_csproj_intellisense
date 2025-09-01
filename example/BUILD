@@ -5,7 +5,7 @@ load("@rules_dotnet_csharp_csproj_intellisense//:generate_csproj.bzl", "generate
 csharp_library(
     name = "library_a",
     srcs = ["LibraryA.cs"],
-    target_frameworks = ["net6.0"],
+    target_frameworks = ["net8.0"],
     visibility = ["//visibility:public"],
     deps = [
         "@paket.main//google.protobuf",
@@ -20,7 +20,7 @@ csharp_library(
 csharp_binary(
     name = "main",
     srcs = ["Main.cs"],
-    target_frameworks = ["net6.0"],
+    target_frameworks = ["net8.0"],
     visibility = ["//visibility:public"],
     deps = [
         ":library_a",
@@ -30,5 +30,5 @@ csharp_binary(
 generate_csproj(
     name = "intellisense",
     project_name = "Project",
-    target_framework = "net6.0",
+    target_framework = "net8.0",
 )
