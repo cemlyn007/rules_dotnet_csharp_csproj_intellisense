@@ -15,7 +15,7 @@ When developing C# applications with Bazel, IDEs like VS Code lose IntelliSense 
 
 - **Automatic Dependency Resolution**: Scans Bazel's action graph to find all DLL dependencies
 - **NuGet Package Support**: Works with packages managed through Paket/rules_dotnet
-- **Multi-Framework Support**: Configurable target framework (defaults to net6.0)
+- **Multi-Framework Support**: Configurable target framework (defaults to net9.0)
 - **Zero Configuration**: Works out of the box with standard Bazel C# projects
 - **IDE Integration**: Generated `.csproj` files are compatible with VS Code, Visual Studio, and Rider
 
@@ -44,7 +44,7 @@ load("@rules_dotnet//dotnet:defs.bzl", "csharp_binary", "csharp_library")
 csharp_library(
     name = "my_library",
     srcs = ["LibraryA.cs"],
-    target_frameworks = ["net6.0"],
+    target_frameworks = ["net9.0"],
     deps = [
         "@paket.main//some.nuget.package",
     ],
@@ -53,7 +53,7 @@ csharp_library(
 csharp_binary(
     name = "my_app",
     srcs = ["Main.cs"],
-    target_frameworks = ["net6.0"],
+    target_frameworks = ["net9.0"],
     deps = [":my_library"],
 )
 
@@ -61,7 +61,7 @@ csharp_binary(
 generate_csproj(
     name = "intellisense",
     project_name = "MyProject",
-    target_framework = "net6.0",
+    target_framework = "net9.0",
 )
 ```
 
@@ -103,7 +103,7 @@ The Starlark rule that creates a `py_binary` target to run the CSProj generation
 - `name`: Target name for the Bazel rule
 - `project_name`: Name of the generated `.csproj` file
 - `project_dir`: Directory where the `.csproj` will be created (default: ".")
-- `target_framework`: .NET target framework (default: "net6.0")
+- `target_framework`: .NET target framework (default: "net9.0")
 
 #### `compile_csproj.py`
 The Python script that performs the actual analysis and generation.
@@ -111,7 +111,7 @@ The Python script that performs the actual analysis and generation.
 ## Configuration
 
 ### Supported Target Frameworks
-- net6.0 (default)
+- net9.0 (default)
 - net7.0
 - net8.0
 - Any valid .NET target framework moniker
@@ -134,7 +134,7 @@ The generated `.csproj` file follows this structure:
 <?xml version="1.0" ?>
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
+    <TargetFramework>net9.0</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
     <!-- Source files would be added here -->
@@ -191,7 +191,7 @@ The generated `.csproj` file follows this structure:
 To debug the generation process, you can run the Python script directly:
 
 ```bash
-python compile_csproj.py MyProject . net6.0
+python compile_csproj.py MyProject . net9.0
 ```
 
 This will show any errors in the dependency resolution or CSProj generation process.

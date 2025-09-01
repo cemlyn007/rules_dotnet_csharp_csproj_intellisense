@@ -2,14 +2,14 @@ def generate_csproj(
         name,
         project_name,
         project_dir = ".",
-        target_framework = "net6.0"):
+        target_framework = "net9.0"):
     """Generates a .csproj file for C# intellisense support.
 
     Args:
         name: The name of the target.
         project_name: Name of the C# project.
         project_dir: Directory of the project (default: ".").
-        target_framework: Target .NET framework (default: "net6.0").
+        target_framework: Target .NET framework (default: "net9.0").
     """
 
     # Create py_binary that directly runs compile_csproj.py
