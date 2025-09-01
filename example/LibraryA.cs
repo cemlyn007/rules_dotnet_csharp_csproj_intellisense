@@ -1,5 +1,4 @@
 using System;
-using Grpc.Net.Client;
 
 namespace Project.LibraryA
 {
@@ -7,8 +6,6 @@ namespace Project.LibraryA
     {
         public string GetMessage()
         {
-            var channel = Grpc.Net.Client.GrpcChannel.ForAddress("http://localhost:50051");
-            channel.ShutdownAsync().Wait();
             return "hello";
         }
 

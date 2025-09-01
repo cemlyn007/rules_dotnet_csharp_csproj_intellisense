@@ -1,34 +1,48 @@
+load("@protobuf//bazel:proto_library.bzl", "proto_library")
 load("@rules_dotnet//dotnet:defs.bzl", "csharp_binary", "csharp_library")
 load("@rules_dotnet_csharp_csproj_intellisense//:generate_csproj.bzl", "generate_csproj")
+load("@rules_proto_grpc_csharp//:defs.bzl", "csharp_proto_library")
 
-# Examples package that includes all example projects
+proto_library(
+    name = "thing_proto",
+    srcs = ["thing.proto"],
+    import_prefix = "examples/proto",
+    visibility = ["//visibility:public"],
+    deps = [
+        "@protobuf//:any_proto",
+    ],
+)
+
+csharp_proto_library(
+    name = "thing_csharp_proto",
+    protos = [
+        ":thing_proto",
+    ],
+)
+
+# # Examples package that includes all example projects
 csharp_library(
     name = "library_a",
     srcs = ["LibraryA.cs"],
-    target_frameworks = ["net8.0"],
+    target_frameworks = ["net9.0"],
     visibility = ["//visibility:public"],
-    deps = [
-        "@paket.main//google.protobuf",
-        "@paket.main//grpc.aspnetcore.server",
-        "@paket.main//grpc.core.api",
-        "@paket.main//grpc.net.client",
-        "@paket.main//grpc.net.common:grpc.net.common",
-        "@paket.main//microsoft.extensions.logging.abstractions:microsoft.extensions.logging.abstractions",
-    ],
 )
 
 csharp_binary(
     name = "main",
-    srcs = ["Main.cs"],
-    target_frameworks = ["net8.0"],
+    srcs = [
+        "Main.cs",
+    ],
+    target_frameworks = ["net9.0"],
     visibility = ["//visibility:public"],
     deps = [
         ":library_a",
+        ":thing_csharp_proto",
     ],
 )
 
 generate_csproj(
     name = "intellisense",
     project_name = "Project",
-    target_framework = "net8.0",
+    target_framework = "net9.0",
 )
