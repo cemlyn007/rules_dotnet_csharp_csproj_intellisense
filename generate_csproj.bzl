@@ -17,7 +17,8 @@ def generate_csproj(
         name = name,
         main = "@rules_dotnet_csharp_csproj_intellisense//:compile_csproj.py",
         srcs = ["@rules_dotnet_csharp_csproj_intellisense//:compile_csproj.py"],
-        args = [project_name, project_dir, target_framework],
+        args = [project_name, project_dir, target_framework, "$(location @rules_dotnet_csharp_csproj_intellisense//tool:ListSymbols)"],
         imports = [""],
         visibility = ["//visibility:public"],
+        data = ["@rules_dotnet_csharp_csproj_intellisense//tool:ListSymbols"],
     )

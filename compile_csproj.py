@@ -1,10 +1,12 @@
 import argparse
+import concurrent.futures
 import dataclasses
 import json
 import os
 import subprocess
 import xml.etree.ElementTree as ET
 from collections.abc import Iterable
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Any
 from xml.dom import minidom
@@ -76,6 +78,25 @@ def _run_bazel_output_path(directory: Path):
     )
     output_path = process_result.stdout.strip()
     return Path(output_path)
+
+
+def _run_bazel_workspace(directory: Path):
+    process_result = subprocess.run(
+        [BAZEL_BINARY, "info", "workspace"],
+        check=True,
+        capture_output=True,
+        cwd=directory,
+        text=True,
+    )
+    workspace = process_result.stdout.strip()
+    return Path(workspace)
+
+
+def _list_symbols(list_symbols_binary: Path, file: Path):
+    result = subprocess.run(
+        list(map(str, [list_symbols_binary, file])), capture_output=True, text=True
+    )
+    return result.stdout
 
 
 @dataclasses.dataclass
@@ -207,13 +228,6 @@ def _get_actions(directory: Path) -> list[_Action]:
     return actions_factory()
 
 
-def _find_external_path(external: Path, path: Path) -> Path | None:
-    full_path = external.parent / path
-    if full_path.exists():
-        return full_path
-    raise FileNotFoundError(f"External path not found: {full_path}")
-
-
 def _generate_csproj(
     csproj_path: Path,
     source_files: list[str],
@@ -241,24 +255,12 @@ def _generate_csproj(
     csproj_path.write_text(xmlstr)
 
 
-def _filter_on_location_dlls(external: Path, paths: Iterable[Path]) -> list[Path]:
-    dlls = []
-    for path in paths:
-        if not str(path).startswith(external.name):
-            continue
-        if (full_path := _find_external_path(external, path)) is not None:
-            if (
-                full_path.is_file()
-                and full_path.suffix == ".dll"
-                and full_path not in dlls
-            ):
-                dlls.append(full_path)
-            if full_path.is_dir():
-                raise ValueError("Directory found, unexpected")
-    return dlls
+def _compile_csproj(
+    project_name: str, directory: Path, target_framework: str, list_symbol_binary: Path
+) -> None:
+    if not list_symbol_binary.exists():
+        raise FileNotFoundError(f"ListSymbols binary not found: {list_symbol_binary}")
 
-
-def compile_csproj(project_name: str, directory: Path, target_framework: str) -> None:
     workspace_absolute = Path(os.environ["BUILD_WORKSPACE_DIRECTORY"])
 
     directory = workspace_absolute / directory
@@ -271,19 +273,44 @@ def compile_csproj(project_name: str, directory: Path, target_framework: str) ->
 
     external = output_base / "external"
 
-    paths = [path for action in actions for path in action.inputs + action.outputs]
-    dlls = _filter_on_location_dlls(
-        external,
-        paths,
-    )
-    for dll in _filter_on_location_dlls(bazel_output_path, paths):
-        if dll not in dlls:
-            dlls.append(dll)
+    bazel_workspace = _run_bazel_workspace(directory)
+
+    paths = []
+    for action in actions:
+        for path in action.inputs + action.outputs:
+            if path.suffix in {".cs", ".dll"}:
+                for prefix in (
+                    external.parent,
+                    bazel_workspace,
+                    bazel_output_path.parent,
+                ):
+                    full_path = (prefix / path).resolve()
+                    if full_path.exists():
+                        paths.append(full_path)
+
+    groupings = {}
+    with ThreadPoolExecutor() as executor:
+        futures = {
+            executor.submit(_list_symbols, Path(list_symbol_binary), path): path
+            for path in paths
+        }
+        for future in concurrent.futures.as_completed(futures):
+            symbol = future.result()
+            path = futures[future]
+            groupings.setdefault(symbol, set()).add(path)
+
+    selected_dlls = set()
+    for _, paths in groupings.items():
+        if any(path.suffix == ".cs" for path in paths):
+            continue
+        dll = next((path for path in paths if path.suffix == ".dll"), None)
+        if dll:
+            selected_dlls.add(dll)
 
     _generate_csproj(
         csproj_path=directory / f"{project_name}.csproj",
         source_files=[],
-        dll_references=list(map(str, dlls)),
+        dll_references=list(map(str, selected_dlls)),
         target_framework=target_framework,
     )
 
@@ -297,8 +324,16 @@ def _main():
     argument_parser.add_argument(
         "target_framework", type=str, help="Target framework for the project"
     )
+    argument_parser.add_argument(
+        "list_symbol_binary", type=Path, help="Path to the ListSymbols binary"
+    )
     args = argument_parser.parse_args()
-    compile_csproj(args.project_name, args.directory, args.target_framework)
+    _compile_csproj(
+        args.project_name,
+        args.directory,
+        args.target_framework,
+        args.list_symbol_binary,
+    )
 
 
 if __name__ == "__main__":
