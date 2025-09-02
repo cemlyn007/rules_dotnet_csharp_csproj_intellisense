@@ -1,8 +1,6 @@
 syntax = "proto3";
 
-option go_package = "github.com/rules-proto-grpc/rules_proto_grpc/examples/proto";
-
-package examples.proto;
+package example.proto;
 
 import "google/protobuf/any.proto";
 

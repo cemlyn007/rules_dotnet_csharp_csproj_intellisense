@@ -6,7 +6,7 @@ load("@rules_proto_grpc_csharp//:defs.bzl", "csharp_proto_library")
 proto_library(
     name = "thing_proto",
     srcs = ["thing.proto"],
-    import_prefix = "examples/proto",
+    import_prefix = "example/proto",
     visibility = ["//visibility:public"],
     deps = [
         "@protobuf//:any_proto",
@@ -20,7 +20,6 @@ csharp_proto_library(
     ],
 )
 
-# # Examples package that includes all example projects
 csharp_library(
     name = "library_a",
     srcs = ["LibraryA.cs"],
@@ -43,6 +42,6 @@ csharp_binary(
 
 generate_csproj(
     name = "intellisense",
-    project_name = "Project",
+    project_name = "Example",
     target_framework = "net9.0",
 )

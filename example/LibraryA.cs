@@ -1,6 +1,6 @@
 using System;
 
-namespace Project.LibraryA
+namespace Example.LibraryA
 {
     public class HelloWorld
     {
