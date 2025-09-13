@@ -205,12 +205,14 @@ class CompileCsproj
         }
         else if (targets.Length == 1)
         {
-            queryExpression = targets[0];
+            // For a single target, include its transitive dependencies
+            queryExpression = $"deps({targets[0]})";
         }
         else
         {
-            // For multiple targets, use a union expression: "target1 + target2 + target3"
-            queryExpression = string.Join(" + ", targets);
+            // For multiple targets, use deps() for each and union them
+            var depsQueries = targets.Select(target => $"deps({target})");
+            queryExpression = string.Join(" + ", depsQueries);
         }
 
         var command = new[] { BazelBinary, "aquery", queryExpression, "--output=jsonproto" };
@@ -247,12 +249,14 @@ class CompileCsproj
         string external = Path.Combine(outputBase, "external");
         var prefixes = new[]
         {
-            Path.GetDirectoryName(external)!,
             bazelWorkspace,
+            Path.GetDirectoryName(external)!,
             Path.GetDirectoryName(bazelOutputPath)!
         };
 
         var paths = new List<string>();
+        var sourceFiles = new HashSet<string>();
+
         foreach (var action in actions)
         {
             var allPaths = action.Inputs.Concat(action.Outputs);
@@ -267,6 +271,12 @@ class CompileCsproj
                         if (File.Exists(fullPath))
                         {
                             paths.Add(fullPath);
+
+                            // Track source files separately
+                            if (extension == ".cs")
+                            {
+                                sourceFiles.Add(fullPath);
+                            }
                             break;
                         }
                     }
@@ -294,21 +304,81 @@ class CompileCsproj
             }
         });
 
+        // First, collect all type names from our source files
+        var sourceTypeNames = new HashSet<string>();
+        Console.WriteLine($"Analyzing {sourceFiles.Count} source files for type names...");
+        foreach (var sourceFile in sourceFiles)
+        {
+            try
+            {
+                var typeNames = SymbolLister.GetPublicTypeNames(sourceFile);
+                if (typeNames != null)
+                {
+                    foreach (var typeName in typeNames)
+                    {
+                        sourceTypeNames.Add(typeName);
+                        Console.WriteLine($"Found type: {typeName} in {Path.GetFileName(sourceFile)}");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Warning: Failed to analyze source file {sourceFile}: {ex.Message}");
+            }
+        }
+
         var selectedDlls = new HashSet<string>();
         foreach (var (symbol, pathsBag) in groupings)
         {
             var pathsList = pathsBag.ToList();
-            if (pathsList.Any(path => Path.GetExtension(path) == ".cs"))
-                continue;
 
-            var dll = pathsList.FirstOrDefault(path => Path.GetExtension(path) == ".dll");
-            if (!string.IsNullOrEmpty(dll))
-                selectedDlls.Add(dll);
+            // Check if any of these paths are source files that we're including
+            var hasSourceFile = pathsList.Any(path => sourceFiles.Contains(path));
+
+            // Also check if any DLL provides types that we already have in source files
+            if (!hasSourceFile)
+            {
+                var dll = pathsList.FirstOrDefault(path => Path.GetExtension(path) == ".dll");
+                if (!string.IsNullOrEmpty(dll))
+                {
+                    try
+                    {
+                        var dllTypeNames = SymbolLister.GetPublicTypeNames(dll);
+                        if (dllTypeNames != null)
+                        {
+                            // Check if any type from this DLL already exists in our source files
+                            foreach (var dllTypeName in dllTypeNames)
+                            {
+                                if (sourceTypeNames.Contains(dllTypeName))
+                                {
+                                    hasSourceFile = true;
+                                    Console.WriteLine($"Skipping DLL {Path.GetFileName(dll)} because type '{dllTypeName}' exists in source");
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Warning: Failed to analyze DLL {dll}: {ex.Message}");
+                    }
+                }
+            }
+
+            // Only include DLLs if we don't have conflicting source files
+            if (!hasSourceFile)
+            {
+                var dll = pathsList.FirstOrDefault(path => Path.GetExtension(path) == ".dll");
+                if (!string.IsNullOrEmpty(dll))
+                {
+                    selectedDlls.Add(dll);
+                }
+            }
         }
 
         GenerateCsproj(
             Path.Combine(directory, $"{projectName}.csproj"),
-            new List<string>(), // Source files - empty as in Python
+            sourceFiles.ToList(), // Include source files
             selectedDlls.ToList(),
             targetFramework
         );

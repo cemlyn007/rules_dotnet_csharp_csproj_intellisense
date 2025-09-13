@@ -21,8 +21,11 @@ csharp_proto_library(
 )
 
 csharp_library(
-    name = "library_a",
-    srcs = ["LibraryA.cs"],
+    name = "library",
+    srcs = [
+        "LibraryFileA.cs",
+        "LibraryFileB.cs",
+    ],
     target_frameworks = ["net9.0"],
     visibility = ["//visibility:public"],
 )
@@ -31,11 +34,12 @@ csharp_binary(
     name = "main",
     srcs = [
         "Main.cs",
+        "MainFileA.cs",
     ],
     target_frameworks = ["net9.0"],
     visibility = ["//visibility:public"],
     deps = [
-        ":library_a",
+        ":library",
         ":thing_csharp_proto",
     ],
 )

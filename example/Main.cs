@@ -6,11 +6,14 @@ namespace Example
     {
         static void Main(string[] args)
         {
+            Example.Library.HelloWorldA helloWorldA = new();
+            Console.WriteLine(helloWorldA.GetMessage());
+            Example.Library.HelloWorldB helloWorldB = new();
+            Console.WriteLine(helloWorldB.GetMessage());
             Example.Proto.Thing thing = new();
             thing.Name = "My Special Thing";
-            Example.LibraryA.HelloWorld helloWorld = new();
-            Console.WriteLine(helloWorld.GetMessage());
             Console.WriteLine(thing.ToString());
+            Example.MainFileA.PrintHelloWorld();
         }
     }
 }
