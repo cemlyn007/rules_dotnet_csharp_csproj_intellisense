@@ -4,7 +4,8 @@ def generate_csproj(
         name,
         project_name,
         project_dir = ".",
-        target_framework = "net9.0"):
+        target_framework = "net9.0",
+        targets = []):
     """Generates a .csproj file for C# intellisense support.
 
     This creates an executable target that can be run with `bazel run` to generate
@@ -15,18 +16,26 @@ def generate_csproj(
         project_name: Name of the C# project.
         project_dir: Directory of the project (default: ".").
         target_framework: Target .NET framework (default: "net9.0").
+        targets: List of specific targets to analyze (default: [] means analyze all targets "//...").
     """
+
+    # Build the args list with optional targets
+    args = [
+        project_name,
+        project_dir,
+        target_framework,
+        "$(location @rules_dotnet_csharp_csproj_intellisense//tool:CompileCsproj)",
+    ]
+
+    # Add targets if specified
+    if targets:
+        args.extend(targets)
 
     # Create the executable target using the external shell script
     native.sh_binary(
         name = name,
         srcs = ["@rules_dotnet_csharp_csproj_intellisense//:generate_csproj_runner.sh"],
-        args = [
-            project_name,
-            project_dir,
-            target_framework,
-            "$(location @rules_dotnet_csharp_csproj_intellisense//tool:CompileCsproj)",
-        ],
+        args = args,
         data = [
             "@rules_dotnet_csharp_csproj_intellisense//tool:CompileCsproj",
         ],

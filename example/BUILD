@@ -44,4 +44,5 @@ generate_csproj(
     name = "intellisense",
     project_name = "Example",
     target_framework = "net9.0",
+    targets = [":main"],
 )

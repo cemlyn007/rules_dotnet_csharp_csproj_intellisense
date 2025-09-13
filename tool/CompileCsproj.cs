@@ -194,9 +194,28 @@ class CompileCsproj
         return output;
     }
 
-    static JsonDocument RunBazelAquery(string directory)
+    static JsonDocument RunBazelAquery(string directory, params string[] targets)
     {
-        string output = RunProcess(new[] { BazelBinary, "aquery", "//...", "--output=jsonproto" }, directory);
+        string queryExpression;
+
+        // Default to all targets if none specified
+        if (targets.Length == 0)
+        {
+            queryExpression = "//...";
+        }
+        else if (targets.Length == 1)
+        {
+            queryExpression = targets[0];
+        }
+        else
+        {
+            // For multiple targets, use a union expression: "target1 + target2 + target3"
+            queryExpression = string.Join(" + ", targets);
+        }
+
+        var command = new[] { BazelBinary, "aquery", queryExpression, "--output=jsonproto" };
+
+        string output = RunProcess(command, directory);
         return JsonDocument.Parse(output);
     }
 
@@ -207,20 +226,20 @@ class CompileCsproj
 
 
 
-    static List<Action> GetActions(string directory)
+    static List<Action> GetActions(string directory, params string[] targets)
     {
-        var aquery = RunBazelAquery(directory);
+        var aquery = RunBazelAquery(directory, targets);
         var actionsFactory = new ActionsFactory(aquery);
         return actionsFactory.GetActions();
     }
 
-    static void CompileCsProj(string projectName, string directory, string targetFramework)
+    static void CompileCsProj(string projectName, string directory, string targetFramework, params string[] targets)
     {
         string workspaceAbsolute = Environment.GetEnvironmentVariable("BUILD_WORKSPACE_DIRECTORY") ?? "";
         if (!string.IsNullOrEmpty(workspaceAbsolute))
             directory = Path.Combine(workspaceAbsolute, directory);
 
-        var actions = GetActions(directory);
+        var actions = GetActions(directory, targets);
         string outputBase = RunBazelInfo(directory, "output_base");
         string bazelOutputPath = RunBazelInfo(directory, "output_path");
         string bazelWorkspace = RunBazelInfo(directory, "workspace");
@@ -328,15 +347,17 @@ class CompileCsproj
 
     static void Main(string[] args)
     {
-        if (args.Length != 3)
+        if (args.Length < 3)
         {
-            Console.WriteLine("Usage: CompileCsproj <project_name> <directory> <target_framework>");
+            Console.WriteLine("Usage: CompileCsproj <project_name> <directory> <target_framework> [targets...]");
+            Console.WriteLine("If no targets are specified, defaults to '//...'");
             return;
         }
         string projectName = args[0];
         string directory = args[1];
         string targetFramework = args[2];
+        string[] targets = args.Skip(3).ToArray(); // Additional targets if provided
 
-        CompileCsProj(projectName, directory, targetFramework);
+        CompileCsProj(projectName, directory, targetFramework, targets);
     }
 }
