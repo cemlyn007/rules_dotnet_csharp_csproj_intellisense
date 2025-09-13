@@ -2,9 +2,7 @@ load("@rules_dotnet//dotnet:defs.bzl", "csharp_binary")
 
 csharp_binary(
     name = "ListSymbols",
-    srcs = [
-        "ListSymbols.cs",
-    ],
+    srcs = ["ListSymbols.cs"],
     target_frameworks = ["net9.0"],
     visibility = ["//visibility:public"],
     deps = [
@@ -12,4 +10,11 @@ csharp_binary(
         "@paket.main//microsoft.codeanalysis.csharp:microsoft.codeanalysis.csharp",
         "@paket.main//microsoft.codeanalysis:microsoft.codeanalysis",
     ],
+)
+
+csharp_binary(
+    name = "CompileCsproj",
+    srcs = ["CompileCsproj.cs"],
+    target_frameworks = ["net9.0"],
+    visibility = ["//visibility:public"],
 )

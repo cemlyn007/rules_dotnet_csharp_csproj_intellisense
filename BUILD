@@ -1,4 +1,1 @@
-exports_files([
-    "compile_csproj.py",
-    "generate_csproj.bzl",
-])
+exports_files(["generate_csproj.bzl"])
