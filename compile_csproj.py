@@ -14,87 +14,58 @@ from xml.dom import minidom
 BAZEL_BINARY = "bazel"
 
 
-def _run_paket2bazel(directory: Path):
-    subprocess.run(
-        [
-            BAZEL_BINARY,
-            "run",
-            "@rules_dotnet//tools/paket2bazel",
-            "--",
-            "--dependencies-file",
-            str(directory / "paket.dependencies"),
-            "--output-folder",
-            str(directory),
-        ],
-        capture_output=True,
-        text=True,
-        cwd=directory,
-    )
+def _subprocess_run(command: list[str], cwd: Path) -> subprocess.CompletedProcess:
+    try:
+        return subprocess.run(
+            command, check=True, capture_output=True, cwd=cwd, text=True
+        )
+    except subprocess.CalledProcessError as error:
+        raise RuntimeError(
+            f"Command '{' '.join(command)}' failed with exit code {error.returncode}.\n"
+            f"Stdout: {error.stdout}\n"
+            f"Stderr: {error.stderr}"
+        ) from error
 
 
-def _run_bazel_build(directory: Path):
-    subprocess.run(
-        [
-            BAZEL_BINARY,
-            "build",
-            "//...",
-        ],
-        capture_output=True,
-        text=True,
-        cwd=directory,
-    )
-
-
-def _run_bazel_aquery(directory: Path):
-    process_result = subprocess.run(
+def _run_bazel_aquery(directory: Path) -> dict[str, Any]:
+    process_result = _subprocess_run(
         [BAZEL_BINARY, "aquery", "//...", "--output=jsonproto"],
-        check=True,
-        capture_output=True,
         cwd=directory,
     )
     aquery = json.loads(process_result.stdout)
     return aquery
 
 
-def _run_bazel_output_base(directory: Path):
-    process_result = subprocess.run(
+def _run_bazel_output_base(directory: Path) -> Path:
+    process_result = _subprocess_run(
         [BAZEL_BINARY, "info", "output_base"],
-        check=True,
-        capture_output=True,
         cwd=directory,
-        text=True,
     )
     output_base = process_result.stdout.strip()
     return Path(output_base)
 
 
-def _run_bazel_output_path(directory: Path):
-    process_result = subprocess.run(
+def _run_bazel_output_path(directory: Path) -> Path:
+    process_result = _subprocess_run(
         [BAZEL_BINARY, "info", "output_path"],
-        check=True,
-        capture_output=True,
         cwd=directory,
-        text=True,
     )
     output_path = process_result.stdout.strip()
     return Path(output_path)
 
 
-def _run_bazel_workspace(directory: Path):
-    process_result = subprocess.run(
+def _run_bazel_workspace(directory: Path) -> Path:
+    process_result = _subprocess_run(
         [BAZEL_BINARY, "info", "workspace"],
-        check=True,
-        capture_output=True,
         cwd=directory,
-        text=True,
     )
     workspace = process_result.stdout.strip()
     return Path(workspace)
 
 
-def _list_symbols(list_symbols_binary: Path, file: Path):
-    result = subprocess.run(
-        list(map(str, [list_symbols_binary, file])), capture_output=True, text=True
+def _list_symbols(list_symbols_binary: Path, file: Path) -> str:
+    result = _subprocess_run(
+        list(map(str, [list_symbols_binary, file])), cwd=Path.cwd()
     )
     return result.stdout
 
@@ -221,8 +192,6 @@ class _ActionsFactory:
 
 
 def _get_actions(directory: Path) -> list[_Action]:
-    _run_paket2bazel(directory)
-    _run_bazel_build(directory)
     aquery = _run_bazel_aquery(directory)
     actions_factory = _ActionsFactory(aquery)
     return actions_factory()
