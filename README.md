@@ -218,6 +218,8 @@ To try the example:
 
 ```bash
 cd example
+bazel run @rules_dotnet//tools/paket2bazel -- --dependencies-file $(pwd)/paket.dependencies  --output-folder $(pwd)
+bazel build //...
 bazel run :intellisense
 # Open the directory in VS Code for full IntelliSense support
 ```
