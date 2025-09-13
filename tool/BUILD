@@ -1,8 +1,8 @@
-load("@rules_dotnet//dotnet:defs.bzl", "csharp_binary")
+load("@rules_dotnet//dotnet:defs.bzl", "csharp_binary", "csharp_library")
 
-csharp_binary(
-    name = "ListSymbols",
-    srcs = ["ListSymbols.cs"],
+csharp_library(
+    name = "SymbolAnalysis",
+    srcs = ["SymbolAnalysis.cs"],
     target_frameworks = ["net9.0"],
     visibility = ["//visibility:public"],
     deps = [
@@ -17,4 +17,7 @@ csharp_binary(
     srcs = ["CompileCsproj.cs"],
     target_frameworks = ["net9.0"],
     visibility = ["//visibility:public"],
+    deps = [
+        ":SymbolAnalysis",
+    ],
 )

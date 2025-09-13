@@ -5,7 +5,6 @@ PROJECT_NAME="$1"
 PROJECT_DIR="$2"
 TARGET_FRAMEWORK="$3"
 COMPILE_CSPROJ_TOOL="$4"
-LIST_SYMBOLS_TOOL="$5"
 
 # Get the workspace directory where the source files are
 WORKSPACE_DIR="${BUILD_WORKSPACE_DIRECTORY:-$(pwd)}"
@@ -24,4 +23,4 @@ export RUNFILES_DIR="$0.runfiles"
 export RUNFILES_MANIFEST_FILE="$0.runfiles_manifest"
 
 # Run the CompileCsproj tool with the resolved paths
-"$COMPILE_CSPROJ_TOOL" "$PROJECT_NAME" "$FULL_PROJECT_DIR" "$TARGET_FRAMEWORK" "$LIST_SYMBOLS_TOOL"
+"$COMPILE_CSPROJ_TOOL" "$PROJECT_NAME" "$FULL_PROJECT_DIR" "$TARGET_FRAMEWORK"

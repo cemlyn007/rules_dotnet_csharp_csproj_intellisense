@@ -26,11 +26,9 @@ def generate_csproj(
             project_dir,
             target_framework,
             "$(location @rules_dotnet_csharp_csproj_intellisense//tool:CompileCsproj)",
-            "$(location @rules_dotnet_csharp_csproj_intellisense//tool:ListSymbols)",
         ],
         data = [
             "@rules_dotnet_csharp_csproj_intellisense//tool:CompileCsproj",
-            "@rules_dotnet_csharp_csproj_intellisense//tool:ListSymbols",
         ],
         visibility = ["//visibility:public"],
     )

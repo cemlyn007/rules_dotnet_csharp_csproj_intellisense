@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
 using System.Xml.Linq;
+using SymbolAnalysis;
 
 class Action
 {
@@ -204,10 +205,7 @@ class CompileCsproj
         return RunProcess(new[] { BazelBinary, "info", info }, directory).Trim();
     }
 
-    static string RunListSymbols(string listSymbolsBinary, string file)
-    {
-        return RunProcess(new[] { listSymbolsBinary, file }, Directory.GetCurrentDirectory());
-    }
+
 
     static List<Action> GetActions(string directory)
     {
@@ -216,11 +214,8 @@ class CompileCsproj
         return actionsFactory.GetActions();
     }
 
-    static void CompileCsProj(string projectName, string directory, string targetFramework, string listSymbolBinary)
+    static void CompileCsProj(string projectName, string directory, string targetFramework)
     {
-        if (!File.Exists(listSymbolBinary))
-            throw new FileNotFoundException($"ListSymbols binary not found: {listSymbolBinary}");
-
         string workspaceAbsolute = Environment.GetEnvironmentVariable("BUILD_WORKSPACE_DIRECTORY") ?? "";
         if (!string.IsNullOrEmpty(workspaceAbsolute))
             directory = Path.Combine(workspaceAbsolute, directory);
@@ -266,10 +261,13 @@ class CompileCsproj
         {
             try
             {
-                var symbol = RunListSymbols(listSymbolBinary, path);
-                groupings.AddOrUpdate(symbol,
-                    new ConcurrentBag<string> { path },
-                    (key, existing) => { existing.Add(path); return existing; });
+                var symbol = SymbolLister.AnalyzeFile(path);
+                if (symbol != null)
+                {
+                    groupings.AddOrUpdate(symbol,
+                        new ConcurrentBag<string> { path },
+                        (key, existing) => { existing.Add(path); return existing; });
+                }
             }
             catch (Exception ex)
             {
@@ -330,16 +328,15 @@ class CompileCsproj
 
     static void Main(string[] args)
     {
-        if (args.Length != 4)
+        if (args.Length != 3)
         {
-            Console.WriteLine("Usage: CompileCsproj <project_name> <directory> <target_framework> <list_symbol_binary>");
+            Console.WriteLine("Usage: CompileCsproj <project_name> <directory> <target_framework>");
             return;
         }
         string projectName = args[0];
         string directory = args[1];
         string targetFramework = args[2];
-        string listSymbolBinary = args[3];
 
-        CompileCsProj(projectName, directory, targetFramework, listSymbolBinary);
+        CompileCsProj(projectName, directory, targetFramework);
     }
 }
