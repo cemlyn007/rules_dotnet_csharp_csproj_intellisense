@@ -1,1 +1,4 @@
-exports_files(["generate_csproj.bzl"])
+exports_files([
+    "generate_csproj.bzl",
+    "generate_csproj_runner.sh",
+])
